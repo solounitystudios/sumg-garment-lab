@@ -1,0 +1,52 @@
+.shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--sumg-gold);
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--sumg-cream);
+}
+
+.tagline {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--sumg-cream-dim);
+}
+
+.description {
+  margin-top: 2rem;
+  max-width: 32rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--sumg-cream-dim);
+}
+
+.status {
+  margin-top: 3rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--sumg-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--sumg-gold);
+}
