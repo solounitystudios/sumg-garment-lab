@@ -2,11 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { sanitizeInternalRedirect } from "@/lib/domain/redirect";
 
 export async function signInAction(formData: FormData): Promise<void> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const next = String(formData.get("next") ?? "/sources");
+  const next = sanitizeInternalRedirect(formData.get("next"));
 
   const supabase = await getSupabaseServerClient();
   if (!supabase) {
@@ -23,5 +24,5 @@ export async function signInAction(formData: FormData): Promise<void> {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect(next.startsWith("/") ? next : "/sources");
+  redirect(next);
 }
