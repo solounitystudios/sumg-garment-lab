@@ -120,6 +120,43 @@ Original source assets are immutable: no operation ever writes back to
 the source version. Every transformation, whether automated or manual,
 produces a new version row pointing at its parent.
 
+PR #2 introduces the first step of this lineage — `extractions`, a
+persisted record of "this reviewed candidate region should become an
+extraction." No crop/processing pipeline exists yet, so every PR #2
+extraction has `status = 'PENDING'` and a null derived file; no image is
+ever fabricated. Full version lineage (`ArtworkVersion` rows spanning
+`EXTRACTION` through `APPROVED_MASTER`) is PR #3's scope.
+
+## Persistence, Auth & Storage
+
+Garment Lab persists to a **dedicated** Supabase project
+(`sumg-garment-lab`), provisioned separately from every other SUMG
+product's database (including SUMG Records' `sumg-studios-core`
+project) — a real, project-level instantiation of Truth Rule 10, not
+just a documented intention.
+
+- **Auth**: Supabase Auth, email/password. Every persisted row
+  (`garment_sources`, `creative_analyses`, `candidate_regions`,
+  `extractions`) carries an `owner_id` referencing `auth.users`.
+  Ownership is enforced twice: Postgres RLS (`owner_id = auth.uid()` on
+  every table) and an explicit `.eq("owner_id", user.id)` filter in
+  every server-side query — RLS is not relied on alone. `lib/domain/access.ts`
+  provides the ownership-guard used by server actions.
+- **Storage**: a private `garment-sources` Supabase Storage bucket.
+  Objects are keyed `"<owner_id>/..."`, and storage RLS restricts every
+  client-role operation to the owner's own folder. Only INSERT and
+  SELECT storage policies exist — no client role can ever overwrite or
+  delete an uploaded object (Truth Rules 5 & 6).
+  See `supabase/migrations/`.
+- **Immutability**: `garment_sources` has no UPDATE or DELETE RLS
+  policy at all, so an original upload cannot be changed or removed by
+  any client role once persisted, at the database level, not just in
+  the UI.
+- Schema and policies live in `supabase/migrations/` as plain SQL,
+  applied via the Supabase MCP / CLI. `lib/supabase/database.types.ts`
+  is generated from the live schema — regenerate it after schema
+  changes rather than hand-editing.
+
 ## Creative Processing Provider Architecture
 
 Automated and assisted image work is abstracted behind a single
@@ -138,10 +175,14 @@ provider-independent contract, `CreativeProcessingProvider`
 
 Providers implemented or planned:
 
-- `ManualCreativeProvider` — implemented in this PR. Performs no
-  automation; every capability call returns an explicit `UNSUPPORTED`
-  result. Represents "a human does this outside Garment Lab and uploads
-  the result" as a first-class, always-available path.
+- `ManualCreativeProvider` — implemented in PR #1, extended in PR #2.
+  Performs no automation. It supports exactly one capability,
+  `SELECT_REGION`, because a human marking a region themselves (PR #2's
+  manual candidate-region workflow) is real, completed work — not a
+  simulation — so it truthfully returns `COMPLETED`. Every other
+  capability call still returns an explicit `UNSUPPORTED` result.
+  Represents "a human does this outside Garment Lab and uploads the
+  result" as a first-class, always-available path.
 - `AdobeCreativeProvider` — future. Backs supported capabilities with
   real Adobe APIs (Photoshop/Firefly services, Illustrator-compatible
   export). See `docs/ROADMAP.md` PR 5.
@@ -154,6 +195,13 @@ Domain and UI code depend only on `CreativeProcessingProvider`,
 request/response shapes.** A provider that cannot perform an operation
 must return `UNSUPPORTED` or `UNAVAILABLE` with a truthful reason —
 never a simulated `COMPLETED` result.
+
+`getAutomatedAnalysisAvailability()` (`lib/domain/analysis-state.ts`) is
+a separate, system-wide signal for "is any automated analysis provider
+connected" (`ProviderAvailability`), kept deliberately independent of a
+particular source's `AnalysisStatus` — a source can be fully reviewed
+through the manual workflow while automated analysis stays permanently
+`UNAVAILABLE`. The two are never conflated.
 
 ## Standalone Boundary with SUMG Records
 

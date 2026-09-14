@@ -1,21 +1,43 @@
 import "server-only";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 /**
- * Server-only Supabase client using the service role key.
+ * Request-scoped, cookie-bound Supabase client for Server Components,
+ * Server Actions, and Route Handlers. Runs as the signed-in user (not an
+ * elevated role), so every query is subject to Postgres RLS — this is the
+ * client almost all server-side data access should use.
  *
- * The `server-only` import makes this module fail the build if it is ever
- * pulled into a client bundle, so the service role key can never reach the
- * browser. Returns `null` when Supabase has not been configured yet.
+ * Returns `null` when Supabase has not been configured yet.
  */
-export function getSupabaseServiceClient(): SupabaseClient | null {
-  if (!supabaseUrl || !serviceRoleKey) {
+export async function getSupabaseServerClient(): Promise<SupabaseClient<Database> | null> {
+  if (!supabaseUrl || !supabaseAnonKey) {
     return null;
   }
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false },
+
+  const cookieStore = await cookies();
+
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, options);
+          }
+        } catch {
+          // Called from a Server Component that can't set cookies directly.
+          // Safe to ignore: middleware.ts refreshes the session cookie on
+          // every request.
+        }
+      },
+    },
   });
 }
