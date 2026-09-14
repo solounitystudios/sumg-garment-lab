@@ -1,0 +1,52 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--sumg-border);
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--sumg-cream);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.link {
+  font-size: 0.85rem;
+  color: var(--sumg-cream-dim);
+}
+
+.link:hover {
+  color: var(--sumg-gold);
+}
+
+.email {
+  font-size: 0.8rem;
+  color: var(--sumg-cream-dim);
+}
+
+.signOut {
+  background: none;
+  border: 1px solid var(--sumg-border);
+  color: var(--sumg-cream-dim);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.signOut:hover {
+  border-color: var(--sumg-gold);
+  color: var(--sumg-gold);
+}

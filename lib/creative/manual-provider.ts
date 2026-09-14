@@ -33,12 +33,12 @@ function unsupported<TData>(
 }
 
 /**
- * The manual creative processing "provider": it performs no automated
- * image processing at all. It exists so the rest of the system can treat
- * "a human does this outside Garment Lab and uploads the result" as a
- * first-class, always-available path rather than a special case — and so
- * every automated capability has a truthful, explicit UNSUPPORTED result
- * instead of silently failing or faking output.
+ * The manual creative processing "provider". It performs no *automated*
+ * image processing — every automated capability truthfully reports
+ * UNSUPPORTED — but it does support one real, non-automated capability:
+ * recording a region a human selected themselves. Region selection made by
+ * a person is genuinely completed work, not a simulation, so `selectRegion`
+ * is the one call this provider can honestly answer with "COMPLETED".
  */
 export class ManualCreativeProvider implements CreativeProcessingProvider {
   readonly id = PROVIDER_ID;
@@ -51,7 +51,7 @@ export class ManualCreativeProvider implements CreativeProcessingProvider {
   }
 
   getSupportedCapabilities(): CreativeCapability[] {
-    return [];
+    return [CreativeCapability.SELECT_REGION];
   }
 
   async analyzeImage(
@@ -63,11 +63,16 @@ export class ManualCreativeProvider implements CreativeProcessingProvider {
   }
 
   async selectRegion(
-    _params: SelectRegionParams,
+    params: SelectRegionParams,
   ): Promise<CreativeOperationResult<SelectRegionResult>> {
-    return unsupported(
-      "Manual provider does not perform automated region selection.",
-    );
+    // Not automation: this records the region a human already selected.
+    // There is no detection or inference here, so it is honest to report
+    // it as completed rather than unsupported.
+    return {
+      status: "COMPLETED",
+      provider: PROVIDER_ID,
+      data: { asset: params.asset },
+    };
   }
 
   async cropObject(

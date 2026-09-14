@@ -5,20 +5,27 @@ lifecycle, and truth rules this roadmap implements against.
 
 ## PR Sequence
 
-**PR 1 — Foundation + architecture** *(this PR)*
+**PR 1 — Foundation + architecture** *(complete, merged)*
 Next.js/TypeScript app scaffold, minimal visual shell, project structure,
 Supabase client wiring (no schema), `CreativeProcessingProvider` contract
 with `ManualCreativeProvider`, core domain types, architecture docs, CI.
 
-**PR 2 — Source upload + asset model + Creative Analysis V1**
-Persisted source assets, storage wiring, Creative Analysis states and
-candidate region review UI. No fabricated detections — analysis that
-cannot run yet must report `UNAVAILABLE`, not fake results.
+**PR 2 — Source upload + asset model + Creative Analysis V1** *(this PR)*
+A dedicated Supabase project, email/password auth, and the
+`garment_sources` / `creative_analyses` / `candidate_regions` /
+`extractions` schema with RLS. Real source upload to private storage,
+manual region marking on the uploaded image, the
+`NOT_ANALYZED → NEEDS_REVIEW → REVIEWED` manual-flow state machine, and
+extraction as a persisted intent (`status = 'PENDING'`, no derived file
+— no crop pipeline exists yet). Automated analysis is wired to report
+`UNAVAILABLE` truthfully via a real (empty) `ManualCreativeProvider`
+capability set — no fabricated detections anywhere.
 
 **PR 3 — Extraction + artwork version lineage**
-Persisted `ArtworkVersion` records with full lineage (parent, operation,
-provider, technical metadata, review status). Extraction as the first
-real transformation off of a source.
+A real, deterministic crop/processing pipeline that turns a PR #2
+"PENDING" extraction into an actual derived file, plus persisted
+`ArtworkVersion` records with full lineage (parent, operation, provider,
+technical metadata, review status).
 
 **PR 4 — Creative Lab + manual processing workflow**
 The focused Creative Lab UI (sources/versions left, canvas center,
